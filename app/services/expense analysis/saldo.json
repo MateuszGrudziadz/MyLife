@@ -1,0 +1,20 @@
+{
+    "stan_konta": 756,
+    "historia_transakcji": [
+        {
+            "TYP": "Dodaj",
+            "KWOTA": "123",
+            "DATA": "23-05-2026 15:26"
+        },
+        {
+            "TYP": "Dodaj",
+            "KWOTA": "321",
+            "DATA": "23-05-2026 15:26"
+        },
+        {
+            "TYP": "Odejmij",
+            "KWOTA": "12",
+            "DATA": "23-05-2026 15:42"
+        }
+    ]
+}
