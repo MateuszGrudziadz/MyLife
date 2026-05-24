@@ -1,11 +1,10 @@
 import json
 import os
 from datetime import datetime
-
 json_saldo = "modules/wydatki/saldo.json"
 
 # Funkcja do wczytywania użytkowników z pliku
-def wczytajBaze(plik):
+def wczytaj_baze(plik):
     if not os.path.exists(plik):
         with open(plik, "w") as f:
             json.dump({}, f)  # tworzy pusty plik JSON
@@ -13,41 +12,67 @@ def wczytajBaze(plik):
         return json.load(f)
 
 # Funkcja do zapisywania użytkowników do pliku
-def zapiszBaze(plik, item):
+def zapisz_baze(plik, item):
     with open(plik, "w") as f:
         json.dump(item, f, indent=4)
 
-def podajDate():
+# Funkcja podająca aktualną datę
+def podaj_date():
     teraz = datetime.now()
     return teraz.strftime("%d-%m-%Y %H:%M")
 
-saldo = wczytajBaze(json_saldo)
-# Funckja dodająca pieniądze do konta
-def dodajPieniadze():
+# Funkcja słuząca do wypisywania elementów z listy razem z indexem
+def iteracja_z_indexem(lista):
+    i = 1
+    wynik = ""
+    for item in lista:
+        wynik += str(i) + " - " + item + "\n"
+        i += 1
+    return wynik
+
+# Funkcja generująca ID w bazie
+def podaj_ostatnie_id(baza):
+    baza_id = []
+    if not baza:
+        return 0
+    else:
+        for item in baza:
+            baza_id.append(item["ID"])
+        return max(baza_id)
+
+saldo = wczytaj_baze(json_saldo)
+
+# Funkcja dodająca pieniądze do konta
+def dodaj_pieniadze():
     ile = input("\nPodaj kwotę wpłaty pieniędzy: ")
+    wybierz_kategoria = input("\n" + iteracja_z_indexem(saldo["kategoria_wplat"]) + "Wybierz kategorię (1-" + str(len(saldo["kategoria_wplat"])) + "): ")
+    opis = input("Podaj opis: ")
     saldo["stan_konta"] += int(ile)
-    saldo["historia_transakcji"].append({"TYP": "Dodaj", "KWOTA": ile, "DATA": podajDate()})
-    zapiszBaze(json_saldo, saldo)
+    saldo["historia_transakcji"].append({"ID":podaj_ostatnie_id(saldo["historia_transakcji"])+1, "TYP": "Dodaj", "KWOTA": ile, "KATEGORIA": saldo["kategoria_wplat"][int(wybierz_kategoria)-1], "OPIS": opis, "DATA": podaj_date()})
+    zapisz_baze(json_saldo, saldo)
     return("Wpłacono " + ile + " zł.\n")
 
-# Funckja odejmująca pieniądze z konta
-def odejmijPieniadze():
+# Funkcja odejmująca pieniądze z konta
+def odejmij_pieniadze():
     ile = input("\nPodaj kwotę wypłaty pieniędzy: ")
     if int(ile) > saldo["stan_konta"]:
         print("\nNie mozesz wypłacić tyle pieniędzy :(")
         print("Spróbuj mniejszą kwotę :)")
-        odejmijPieniadze()
+        odejmij_pieniadze()
     else:
+        wybierz_kategoria = input("\n" + iteracja_z_indexem(saldo["kategoria_wydatkow"]) + "Wybierz kategorię (1-" + str(len(saldo["kategoria_wydatkow"])) + "): ")
+        opis = input("Podaj opis: ")
         saldo["stan_konta"] -= int(ile)
-        saldo["historia_transakcji"].append({"TYP": "Odejmij", "KWOTA": ile, "DATA": podajDate()})
-        zapiszBaze(json_saldo, saldo)
+        saldo["historia_transakcji"].append({"ID":podaj_ostatnie_id(saldo["historia_transakcji"])+1, "TYP": "Odejmij", "KWOTA": ile, "KATEGORIA": saldo["kategoria_wydatkow"][int(wybierz_kategoria)-1], "OPIS": opis, "DATA": podaj_date()})
+        zapisz_baze(json_saldo, saldo)
         return("Wypłacono " + ile + " zł.\n")
 
 # Funkcja pokazująca stan konta
-def stanKonta():
+def stan_konta():
     return("\nObecny stan konta: " + str(saldo["stan_konta"]) + " zł.\n")
 
-def historiaTransakcji():
+# Funkcja pokazująca historię transakcji
+def historia_transakcji():
     wplywy = 0
     wydatki = 0
     for item in saldo["historia_transakcji"]:
@@ -55,25 +80,60 @@ def historiaTransakcji():
             wplywy += int(item["KWOTA"])
         if item["TYP"] == "Odejmij":
             wydatki += int(item["KWOTA"])
-        print("TYP: "+ item["TYP"] + " | KWOTA: "+ item["KWOTA"] + " | DATA: "+ item["DATA"])
-    return "Suma wpływów: " + str(wplywy) + "\nSuma wydatków: " + str(wydatki)
+        print("ID: "+ str(item["ID"]) + " | TYP: "+ item["TYP"] + " | KWOTA: "+ item["KWOTA"] + " | DATA: "+ item["DATA"])
+    print("Suma wpływów: " + str(wplywy) + "\nSuma wydatków: " + str(wydatki))
+    wybierz_transakcje = input("\nWybierz transakcję (1-" + str(podaj_ostatnie_id(saldo["historia_transakcji"])) + ")\nlub wyjdź (0): ")
+    wybierz_transakcje = int(wybierz_transakcje)
+    if wybierz_transakcje == 0:
+        return "Wyjście\n"
+    elif wybierz_transakcje < 0 or wybierz_transakcje > podaj_ostatnie_id(saldo["historia_transakcji"]):
+        print("\nWybrano niepoprawne ID!")
+        print(historia_transakcji())
+    else:
+        wyswietl_transakcje(wybierz_transakcje)
+
+def wyswietl_transakcje(id):
+    for item in saldo["historia_transakcji"]:
+        if item["ID"] == id:
+            print("\nID: "+ str(item["ID"]) + "\nTYP: "+ item["TYP"] + "\nKWOTA: "+ item["KWOTA"] + "\nKATEGORIA: "+ item["KATEGORIA"] + "\nOPIS: "+ item["OPIS"] + "\nDATA: "+ item["DATA"])
+    wybierz_akcje = input("1. Edytuj transakcję\n2. Usuń transakcję\n3. Wyjdź\nWybierz akcję: ")
+    if (wybierz_akcje == "1"):
+        edytuj_transakcje(id)
+    elif (wybierz_akcje == "2"):
+        usun_transakcje(id)
+    elif (wybierz_akcje == "3"):
+        print(historia_transakcji())
+
+def edytuj_transakcje(id):
+    wybierz_pole = input("Które pole chcesz zedytować? (KWOTA, KATEGORIA, OPIS): ")
+    wybierz_pole = wybierz_pole.upper()
+    if wybierz_pole == "KWOTA" or wybierz_pole == "KATEGORIA" or wybierz_pole == "OPIS":
+        zmiana = input("Wprowadź zmianę: ") # Problem do naprawienia w przyszłości: pola można zamienić na każdą wartość
+        for item in saldo["historia_transakcji"]:
+            if item["ID"] == id:
+                item[wybierz_pole] = zmiana
+                zapisz_baze(json_saldo, saldo)
+    else:
+        print("Niepoprawny wybór")
+        edytuj_transakcje()
+        
 
 while True:
 
-    print("=============")
+    print("=================")
     print("1. Dodaj pieniądze")
     print("2. Odejmij pieniądze")
     print("3. Stan konta")
     print("4. Historia transakcji")
-    print("=============")
+    print("=================")
 
-    wybierz = input("Wybierz (1-3): ")
+    wybierz = input("Wybierz (1-4): ")
     if wybierz == "1":
-        print(dodajPieniadze())
+        print(dodaj_pieniadze())
     elif wybierz == "2":
-        print(odejmijPieniadze())
+        print(odejmij_pieniadze())
     elif wybierz == "3":
-        print(stanKonta())
+        print(stan_konta())
     elif wybierz == "4":
-        print(historiaTransakcji())
+        print(historia_transakcji())
         

@@ -1,20 +1,59 @@
 {
-    "stan_konta": 756,
+    "kategoria_wplat": [
+        "Praca",
+        "Aktywa",
+        "Prezent",
+        "Inne"
+    ],
+    "kategoria_wydatkow": [
+        "Samochod",
+        "Dom",
+        "Nauka",
+        "Rozrywka",
+        "Prezent",
+        "Inne"
+    ],
+    "stan_konta": 992606,
     "historia_transakcji": [
         {
+            "ID": 1,
             "TYP": "Dodaj",
             "KWOTA": "123",
-            "DATA": "23-05-2026 15:26"
+            "KATEGORIA": "Aktywa",
+            "OPIS": "fssdffs",
+            "DATA": "24-05-2026 20:23"
         },
         {
+            "ID": 2,
             "TYP": "Dodaj",
-            "KWOTA": "321",
-            "DATA": "23-05-2026 15:26"
+            "KWOTA": "67",
+            "KATEGORIA": "Prezent",
+            "OPIS": "opis",
+            "DATA": "24-05-2026 20:23"
         },
         {
-            "TYP": "Odejmij",
-            "KWOTA": "12",
-            "DATA": "23-05-2026 15:42"
+            "ID": 3,
+            "TYP": "Dodaj",
+            "KWOTA": "645645",
+            "KATEGORIA": "Praca",
+            "OPIS": "sdffsvc",
+            "DATA": "24-05-2026 20:23"
+        },
+        {
+            "ID": 4,
+            "TYP": "Dodaj",
+            "KWOTA": "1231",
+            "KATEGORIA": "Prezent",
+            "OPIS": "sdf",
+            "DATA": "24-05-2026 20:37"
+        },
+        {
+            "ID": 5,
+            "TYP": "Dodaj",
+            "KWOTA": "123",
+            "KATEGORIA": "Aktywa",
+            "OPIS": "asd",
+            "DATA": "24-05-2026 20:39"
         }
     ]
 }
