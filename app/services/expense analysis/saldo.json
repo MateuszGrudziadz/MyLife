@@ -13,30 +13,13 @@
         "Prezent",
         "Inne"
     ],
-    "stan_konta": 992606,
     "historia_transakcji": [
-        {
-            "ID": 1,
-            "TYP": "Dodaj",
-            "KWOTA": "123",
-            "KATEGORIA": "Aktywa",
-            "OPIS": "fssdffs",
-            "DATA": "24-05-2026 20:23"
-        },
         {
             "ID": 2,
             "TYP": "Dodaj",
             "KWOTA": "67",
             "KATEGORIA": "Prezent",
             "OPIS": "opis",
-            "DATA": "24-05-2026 20:23"
-        },
-        {
-            "ID": 3,
-            "TYP": "Dodaj",
-            "KWOTA": "645645",
-            "KATEGORIA": "Praca",
-            "OPIS": "sdffsvc",
             "DATA": "24-05-2026 20:23"
         },
         {
@@ -54,6 +37,14 @@
             "KATEGORIA": "Aktywa",
             "OPIS": "asd",
             "DATA": "24-05-2026 20:39"
+        },
+        {
+            "ID": 6,
+            "TYP": "Odejmij",
+            "KWOTA": "12",
+            "KATEGORIA": "Dom",
+            "OPIS": "odkurzacz",
+            "DATA": "24-05-2026 23:29"
         }
     ]
 }
