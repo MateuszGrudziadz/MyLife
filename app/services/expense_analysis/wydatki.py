@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-json_saldo = "modules/wydatki/saldo.json"
+json_saldo = "app/services/expense_analysis/saldo.json"
 
 # Funkcja do wczytywania użytkowników z pliku
 def wczytaj_baze(plik):
@@ -136,29 +136,4 @@ def usun_transakcje(id):
 def wyswietl_kategorie():
     print("\n1. Kategorie wpłat:\n" + iteracja_z_indexem(saldo["kategoria_wplat"]) +
           "\n2. Kategorie wypłat:\n" + iteracja_z_indexem(saldo["kategoria_wydatkow"]))
-    input()
 
-while True:
-
-    print("=================")
-    print("1. Dodaj pieniądze")
-    print("2. Odejmij pieniądze")
-    print("3. Stan konta")
-    print("4. Historia transakcji")
-    print("5. Wyświetl kategorie")
-    print("=================")
-
-    wybierz = input("Wybierz (1-5): ")
-    if wybierz == "1":
-        print(dodaj_pieniadze())
-    elif wybierz == "2":
-        print(odejmij_pieniadze())
-    elif wybierz == "3":
-        print(stan_konta())
-    elif wybierz == "4":
-        print(historia_transakcji())
-    elif wybierz == "5":
-        wyswietl_kategorie()
-    else:
-        print("Niepoprawna wartość")
-        
