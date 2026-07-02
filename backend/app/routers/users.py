@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from app.core.templates import templates
+from backend.app.core.templates import templates
 
 router = APIRouter(prefix="/users", tags=["users"])
 
