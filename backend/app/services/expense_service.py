@@ -1,73 +1,72 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
 from fastapi import HTTPException
+from sqlalchemy import desc, func
+from sqlalchemy.orm import Session
 
 from app.models.category import Category
 from app.models.expense import Expense
 
-
-ALLOWED_TYPES = {"wplata", "wydatek", "income", "expense"}
-
-TYPE_NORMALIZATION = {
-    "income": "wplata",
-    "expense": "wydatek",
-    "wplata": "wplata",
-    "wydatek": "wydatek",
-}
+ALLOWED_TYPES = {"wplata", "wydatek"}
 
 
 def normalize_type(value: str) -> str:
-    if value not in TYPE_NORMALIZATION:
+    if value not in ALLOWED_TYPES:
         raise HTTPException(
             status_code=400,
-            detail="Typ musi mieć wartość: wplata, wydatek, income albo expense"
+            detail="Typ musi mieć wartość: wplata albo wydatek",
         )
-    return TYPE_NORMALIZATION[value]
+    return value
 
 
-def get_balance(db: Session) -> float:
+def get_balance(db: Session, user_id: int) -> float:
     incomes = db.query(func.coalesce(func.sum(Expense.amount), 0)).filter(
-        Expense.transaction_type.in_(["wplata", "income"])
+        Expense.user_id == user_id,
+        Expense.transaction_type == "wplata",
     ).scalar()
 
     expenses = db.query(func.coalesce(func.sum(Expense.amount), 0)).filter(
-        Expense.transaction_type.in_(["wydatek", "expense"])
+        Expense.user_id == user_id,
+        Expense.transaction_type == "wydatek",
     ).scalar()
 
     return float(incomes) - float(expenses)
 
 
-def get_month_stats(db: Session, year: int, month: int):
+def get_month_stats(db: Session, year: int, month: int, user_id: int):
     base_query = db.query(Expense).filter(
+        Expense.user_id == user_id,
         func.extract("year", Expense.created_at) == year,
-        func.extract("month", Expense.created_at) == month
+        func.extract("month", Expense.created_at) == month,
     )
 
     income_total = db.query(func.coalesce(func.sum(Expense.amount), 0)).filter(
-        Expense.transaction_type.in_(["wplata", "income"]),
+        Expense.user_id == user_id,
+        Expense.transaction_type == "wplata",
         func.extract("year", Expense.created_at) == year,
-        func.extract("month", Expense.created_at) == month
+        func.extract("month", Expense.created_at) == month,
     ).scalar()
 
     expense_total = db.query(func.coalesce(func.sum(Expense.amount), 0)).filter(
-        Expense.transaction_type.in_(["wydatek", "expense"]),
+        Expense.user_id == user_id,
+        Expense.transaction_type == "wydatek",
         func.extract("year", Expense.created_at) == year,
-        func.extract("month", Expense.created_at) == month
+        func.extract("month", Expense.created_at) == month,
     ).scalar()
 
     biggest_expense = db.query(Expense).filter(
-        Expense.transaction_type.in_(["wydatek", "expense"]),
+        Expense.user_id == user_id,
+        Expense.transaction_type == "wydatek",
         func.extract("year", Expense.created_at) == year,
-        func.extract("month", Expense.created_at) == month
+        func.extract("month", Expense.created_at) == month,
     ).order_by(desc(Expense.amount)).first()
 
     top_category = db.query(
         Category.name,
-        func.coalesce(func.sum(Expense.amount), 0).label("total")
+        func.coalesce(func.sum(Expense.amount), 0).label("total"),
     ).join(Expense, Expense.category_id == Category.id).filter(
-        Expense.transaction_type.in_(["wydatek", "expense"]),
+        Expense.user_id == user_id,
+        Expense.transaction_type == "wydatek",
         func.extract("year", Expense.created_at) == year,
-        func.extract("month", Expense.created_at) == month
+        func.extract("month", Expense.created_at) == month,
     ).group_by(Category.name).order_by(desc("total")).first()
 
     return {
@@ -88,11 +87,8 @@ def get_month_stats(db: Session, year: int, month: int):
 
 
 def validate_category_kind(category: Category, transaction_type: str):
-    normalized_category_kind = normalize_type(category.kind)
-    normalized_transaction_type = normalize_type(transaction_type)
-
-    if normalized_category_kind != normalized_transaction_type:
+    if category.kind != transaction_type:
         raise HTTPException(
             status_code=400,
-            detail=f"Kategoria '{category.name}' ma typ '{category.kind}', a transakcja ma typ '{transaction_type}'."
+            detail=f"Kategoria '{category.name}' ma typ '{category.kind}', a transakcja ma typ '{transaction_type}'.",
         )

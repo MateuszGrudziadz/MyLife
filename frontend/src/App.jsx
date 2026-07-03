@@ -1,9 +1,16 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Expenses from "./pages/Expenses";
 import Reminders from "./pages/Reminders";
 import Journal from "./pages/Journal";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+
+function RequireAuth() {
+  const token = localStorage.getItem("token");
+  return token ? <Outlet /> : <Navigate to="/login" replace />;
+}
 
 function Placeholder({ title }) {
   return (
@@ -17,15 +24,22 @@ function Placeholder({ title }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/expenses" element={<Expenses />} />
-          <Route path="/reminders" element={<Reminders />} />
-          <Route path="/journal" element={<Journal />} />
-          <Route path="/goals" element={<Placeholder title="Cele" />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        <Route element={<RequireAuth />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/reminders" element={<Reminders />} />
+            <Route path="/journal" element={<Journal />} />
+            <Route path="/goals" element={<Placeholder title="Cele" />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 }

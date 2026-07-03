@@ -2,16 +2,23 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.reminder import Reminder
+from app.models.user import User
 from app.schemas.reminder import ReminderCreate, ReminderOut, ReminderUpdate
-from app.services.reminder_service import get_all_reminders, get_active_reminders_count, get_next_reminder
+from app.services.reminder_service import get_reminders_summary
 
 router = APIRouter(prefix="/reminders", tags=["reminders"])
 
 
 @router.post("", response_model=ReminderOut, status_code=status.HTTP_201_CREATED)
-def create_reminder(payload: ReminderCreate, db: Session = Depends(get_db)):
+def create_reminder(
+    payload: ReminderCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     reminder = Reminder(
+        user_id=current_user.id,
         title=payload.title,
         description=payload.description,
         reminder_at=payload.reminder_at,
@@ -24,21 +31,39 @@ def create_reminder(payload: ReminderCreate, db: Session = Depends(get_db)):
 
 
 @router.get("", response_model=list[ReminderOut])
-def list_reminders(db: Session = Depends(get_db)):
-    return get_all_reminders(db)
+def list_reminders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return db.query(Reminder).filter(Reminder.user_id == current_user.id).order_by(Reminder.is_done, Reminder.reminder_at).all()
 
 
 @router.get("/{reminder_id}", response_model=ReminderOut)
-def get_reminder(reminder_id: int, db: Session = Depends(get_db)):
-    reminder = db.query(Reminder).filter(Reminder.id == reminder_id).first()
+def get_reminder(
+    reminder_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    reminder = db.query(Reminder).filter(
+        Reminder.id == reminder_id,
+        Reminder.user_id == current_user.id,
+    ).first()
     if not reminder:
         raise HTTPException(status_code=404, detail="Nie znaleziono przypomnienia")
     return reminder
 
 
 @router.put("/{reminder_id}", response_model=ReminderOut)
-def update_reminder(reminder_id: int, payload: ReminderUpdate, db: Session = Depends(get_db)):
-    reminder = db.query(Reminder).filter(Reminder.id == reminder_id).first()
+def update_reminder(
+    reminder_id: int,
+    payload: ReminderUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    reminder = db.query(Reminder).filter(
+        Reminder.id == reminder_id,
+        Reminder.user_id == current_user.id,
+    ).first()
     if not reminder:
         raise HTTPException(status_code=404, detail="Nie znaleziono przypomnienia")
 
@@ -57,8 +82,15 @@ def update_reminder(reminder_id: int, payload: ReminderUpdate, db: Session = Dep
 
 
 @router.patch("/{reminder_id}/done", response_model=ReminderOut)
-def mark_reminder_done(reminder_id: int, db: Session = Depends(get_db)):
-    reminder = db.query(Reminder).filter(Reminder.id == reminder_id).first()
+def mark_reminder_done(
+    reminder_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    reminder = db.query(Reminder).filter(
+        Reminder.id == reminder_id,
+        Reminder.user_id == current_user.id,
+    ).first()
     if not reminder:
         raise HTTPException(status_code=404, detail="Nie znaleziono przypomnienia")
 
@@ -69,8 +101,15 @@ def mark_reminder_done(reminder_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{reminder_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_reminder(reminder_id: int, db: Session = Depends(get_db)):
-    reminder = db.query(Reminder).filter(Reminder.id == reminder_id).first()
+def delete_reminder(
+    reminder_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    reminder = db.query(Reminder).filter(
+        Reminder.id == reminder_id,
+        Reminder.user_id == current_user.id,
+    ).first()
     if not reminder:
         raise HTTPException(status_code=404, detail="Nie znaleziono przypomnienia")
 
@@ -80,13 +119,8 @@ def delete_reminder(reminder_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/stats/summary")
-def reminders_summary(db: Session = Depends(get_db)):
-    next_reminder = get_next_reminder(db)
-    return {
-        "active_count": get_active_reminders_count(db),
-        "next_reminder": {
-            "id": next_reminder.id,
-            "title": next_reminder.title,
-            "reminder_at": next_reminder.reminder_at,
-        } if next_reminder else None,
-    }
+def reminders_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return get_reminders_summary(db, current_user.id)

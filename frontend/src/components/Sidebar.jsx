@@ -1,11 +1,13 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Wallet,
   Bell,
   NotebookPen,
   Target,
+  LogOut,
 } from "lucide-react";
+import { setAuthToken } from "../api/client";
 
 const items = [
   { label: "Dashboard", to: "/", icon: LayoutDashboard },
@@ -16,12 +18,28 @@ const items = [
 ];
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setAuthToken(null);
+    navigate("/login");
+  };
+
   return (
-    <aside className="w-full border-b bg-white p-4 md:h-screen md:w-72 md:border-b-0 md:border-r">
+    <aside className="w-full border-b bg-white p-4 md:flex md:h-screen md:w-72 md:flex-col md:border-b-0 md:border-r">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">MyLife</h1>
         <p className="mt-1 text-sm text-gray-500">Twoje życie w jednym miejscu</p>
       </div>
+
+      {user?.email && (
+        <div className="mt-6 rounded-2xl bg-gray-50 p-4 text-sm text-gray-700">
+          Zalogowany: <span className="font-semibold">{user.email}</span>
+        </div>
+      )}
 
       <nav className="mt-8 space-y-2">
         {items.map((item) => {
@@ -33,9 +51,7 @@ export default function Sidebar() {
               className={({ isActive }) =>
                 [
                   "flex items-center gap-3 rounded-xl px-4 py-3 text-left transition",
-                  isActive
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-700 hover:bg-gray-100",
+                  isActive ? "bg-gray-900 text-white" : "text-gray-700 hover:bg-gray-100",
                 ].join(" ")
               }
             >
@@ -45,6 +61,14 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      <button
+        onClick={handleLogout}
+        className="mt-auto flex items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-700 hover:bg-gray-100"
+      >
+        <LogOut size={18} />
+        <span>Wyloguj</span>
+      </button>
     </aside>
   );
 }

@@ -5,17 +5,20 @@ from sqlalchemy.sql import func
 from app.core.database import Base
 
 
-class Category(Base):
-    __tablename__ = "categories"
+class Tag(Base):
+    __tablename__ = "tags"
     __table_args__ = (
-        UniqueConstraint("user_id", "name", "kind", name="uq_category_user_name_kind"),
+        UniqueConstraint("user_id", "name", name="uq_tags_user_name"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    name = Column(String(100), nullable=False)
-    kind = Column(String(20), nullable=False)  # wplata / wydatek
+    name = Column(String(80), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    user = relationship("User", back_populates="categories")
-    expenses = relationship("Expense", back_populates="category")
+    user = relationship("User")
+    journal_entries = relationship(
+        "JournalEntry",
+        secondary="journal_entry_tags",
+        back_populates="tags",
+    )

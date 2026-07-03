@@ -15,6 +15,7 @@ class JournalEntryCreate(BaseModel):
     journal_text: Optional[str] = None
     gratitude_text: Optional[str] = None
     notes: Optional[str] = None
+    tags: Optional[list[str]] = None
 
 
 class JournalEntryUpdate(BaseModel):
@@ -28,6 +29,7 @@ class JournalEntryUpdate(BaseModel):
     journal_text: Optional[str] = None
     gratitude_text: Optional[str] = None
     notes: Optional[str] = None
+    tags: Optional[list[str]] = None
 
 
 class JournalEntryOut(BaseModel):
@@ -42,6 +44,7 @@ class JournalEntryOut(BaseModel):
     journal_text: Optional[str]
     gratitude_text: Optional[str]
     notes: Optional[str]
+    tags: list[str]
     created_at: datetime
     updated_at: datetime
 

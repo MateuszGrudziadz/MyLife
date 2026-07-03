@@ -86,6 +86,37 @@ export default function Dashboard() {
         />
       </div>
 
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          title="Liczba tagów"
+          value={`${data.tag_count ?? 0}`}
+          subtitle="Tagi w dzienniku"
+        />
+        <StatCard
+          title="Najpopularniejszy tag"
+          value={data.top_tags?.[0]?.name || "-"}
+          subtitle={data.top_tags?.[0] ? `${data.top_tags[0].usage_count} użyć` : "Brak danych"}
+        />
+        <StatCard
+          title="Ostatni wpis"
+          value={
+            data.latest_journal
+              ? new Date(data.latest_journal.log_date).toLocaleDateString("pl-PL")
+              : "-"
+          }
+          subtitle={data.latest_journal ? "Najnowszy dzień" : "Brak wpisów"}
+        />
+        <StatCard
+          title="Najbliższe przypomnienie"
+          value={data.next_reminder?.title || "-"}
+          subtitle={
+            data.next_reminder?.reminder_at
+              ? new Date(data.next_reminder.reminder_at).toLocaleString("pl-PL")
+              : "Brak zaplanowanych"
+          }
+        />
+      </div>
+
       <div className="grid gap-6 xl:grid-cols-2">
         <CategoryPieChart data={data.category_breakdown} />
         <MonthlyLineChart data={data.last_6_months} />
@@ -130,11 +161,39 @@ export default function Dashboard() {
                 <p className="text-sm text-gray-700">
                   Produktywność: {data.latest_journal.productivity_level ?? "-"} / 10
                 </p>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {(data.latest_journal.tags || []).map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
               </>
             ) : (
               <p className="text-sm text-gray-500">Brak wpisów w dzienniku.</p>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white p-5 shadow-sm border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900">Najczęstsze tagi</h3>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {data.top_tags?.length ? (
+            data.top_tags.map((tag) => (
+              <span
+                key={tag.name}
+                className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+              >
+                #{tag.name} ({tag.usage_count})
+              </span>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">Brak tagów.</p>
+          )}
         </div>
       </div>
 

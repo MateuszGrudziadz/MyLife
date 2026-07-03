@@ -1,35 +1,38 @@
 import { useEffect, useState } from "react";
 import api from "../api/client";
 
+const emptyForm = {
+  log_date: new Date().toISOString().slice(0, 10),
+  sleep_hours: "",
+  energy_level: "",
+  mood_level: "",
+  productivity_level: "",
+  calories_eaten: "",
+  caffeine_mg: "",
+  journal_text: "",
+  gratitude_text: "",
+  notes: "",
+  tags_text: "",
+};
+
 export default function Journal() {
   const [entries, setEntries] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [tags, setTags] = useState([]);
   const [editId, setEditId] = useState(null);
-
-  const emptyForm = {
-    log_date: new Date().toISOString().slice(0, 10),
-    sleep_hours: "",
-    energy_level: "",
-    mood_level: "",
-    productivity_level: "",
-    calories_eaten: "",
-    caffeine_mg: "",
-    journal_text: "",
-    gratitude_text: "",
-    notes: "",
-  };
-
   const [form, setForm] = useState(emptyForm);
   const [editForm, setEditForm] = useState(emptyForm);
 
   const fetchData = async () => {
     try {
-      const [entriesRes, summaryRes] = await Promise.all([
+      const [entriesRes, summaryRes, tagsRes] = await Promise.all([
         api.get("/journal"),
         api.get("/journal/stats/summary"),
+        api.get("/journal/tags"),
       ]);
       setEntries(entriesRes.data);
       setSummary(summaryRes.data);
+      setTags(tagsRes.data);
     } catch (error) {
       console.error(error);
     }
@@ -39,22 +42,38 @@ export default function Journal() {
     fetchData();
   }, []);
 
-  const parseNumber = (value) => {
-    if (value === "" || value === null || value === undefined) return null;
-    return Number(value);
+  const parseIntOrNull = (value) => {
+    const trimmed = String(value ?? "").trim();
+    if (trimmed === "") return null;
+    const parsed = Number.parseInt(trimmed, 10);
+    return Number.isNaN(parsed) ? null : parsed;
   };
+
+  const parseFloatOrNull = (value) => {
+    const trimmed = String(value ?? "").trim();
+    if (trimmed === "") return null;
+    const parsed = Number.parseFloat(trimmed);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
+  const parseTags = (text) =>
+    text
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
 
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
       await api.post("/journal", {
         ...form,
-        sleep_hours: parseNumber(form.sleep_hours),
-        energy_level: parseNumber(form.energy_level),
-        mood_level: parseNumber(form.mood_level),
-        productivity_level: parseNumber(form.productivity_level),
-        calories_eaten: parseNumber(form.calories_eaten),
-        caffeine_mg: parseNumber(form.caffeine_mg),
+        sleep_hours: parseFloatOrNull(form.sleep_hours),
+        energy_level: parseIntOrNull(form.energy_level),
+        mood_level: parseIntOrNull(form.mood_level),
+        productivity_level: parseIntOrNull(form.productivity_level),
+        calories_eaten: parseIntOrNull(form.calories_eaten),
+        caffeine_mg: parseIntOrNull(form.caffeine_mg),
+        tags: parseTags(form.tags_text),
       });
       setForm(emptyForm);
       fetchData();
@@ -76,6 +95,7 @@ export default function Journal() {
       journal_text: entry.journal_text ?? "",
       gratitude_text: entry.gratitude_text ?? "",
       notes: entry.notes ?? "",
+      tags_text: (entry.tags || []).join(", "),
     });
   };
 
@@ -89,12 +109,13 @@ export default function Journal() {
     try {
       await api.put(`/journal/${editId}`, {
         ...editForm,
-        sleep_hours: parseNumber(editForm.sleep_hours),
-        energy_level: parseNumber(editForm.energy_level),
-        mood_level: parseNumber(editForm.mood_level),
-        productivity_level: parseNumber(editForm.productivity_level),
-        calories_eaten: parseNumber(editForm.calories_eaten),
-        caffeine_mg: parseNumber(editForm.caffeine_mg),
+        sleep_hours: parseFloatOrNull(editForm.sleep_hours),
+        energy_level: parseIntOrNull(editForm.energy_level),
+        mood_level: parseIntOrNull(editForm.mood_level),
+        productivity_level: parseIntOrNull(editForm.productivity_level),
+        calories_eaten: parseIntOrNull(editForm.calories_eaten),
+        caffeine_mg: parseIntOrNull(editForm.caffeine_mg),
+        tags: parseTags(editForm.tags_text),
       });
       cancelEdit();
       fetchData();
@@ -119,6 +140,7 @@ export default function Journal() {
     { title: "Średnia energia", value: `${(summary?.avg_energy ?? 0).toFixed(1)} / 10` },
     { title: "Średni nastrój", value: `${(summary?.avg_mood ?? 0).toFixed(1)} / 10` },
     { title: "Średnia produktywność", value: `${(summary?.avg_productivity ?? 0).toFixed(1)} / 10` },
+    { title: "Tagi", value: summary?.tag_count ?? 0 },
   ];
 
   return (
@@ -126,17 +148,35 @@ export default function Journal() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Dziennik / samopoczucie</h1>
         <p className="mt-1 text-gray-500">
-          Zapisuj sen, energię, nastrój, kofeinę i krótkie notatki z dnia.
+          Zapisuj sen, energię, nastrój, kofeinę, notatki i tagi dnia.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {statCards.map((card) => (
           <div key={card.title} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-gray-500">{card.title}</p>
             <h2 className="mt-2 text-2xl font-semibold text-gray-900">{card.value}</h2>
           </div>
         ))}
+      </div>
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h2 className="text-xl font-semibold text-gray-900">Tagi</h2>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {tags.length ? (
+            tags.map((tag) => (
+              <span
+                key={tag.id}
+                className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+              >
+                #{tag.name}
+              </span>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">Brak tagów.</p>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -157,8 +197,8 @@ export default function Journal() {
             <div>
               <label className="mb-1 block text-sm text-gray-600">Sen (h)</label>
               <input
-                type="number"
-                step="0.1"
+                type="text"
+                inputMode="decimal"
                 className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                 value={form.sleep_hours}
                 onChange={(e) => setForm((prev) => ({ ...prev, sleep_hours: e.target.value }))}
@@ -168,9 +208,8 @@ export default function Journal() {
             <div>
               <label className="mb-1 block text-sm text-gray-600">Energia (1-10)</label>
               <input
-                type="number"
-                min="1"
-                max="10"
+                type="text"
+                inputMode="numeric"
                 className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                 value={form.energy_level}
                 onChange={(e) => setForm((prev) => ({ ...prev, energy_level: e.target.value }))}
@@ -180,9 +219,8 @@ export default function Journal() {
             <div>
               <label className="mb-1 block text-sm text-gray-600">Nastrój (1-10)</label>
               <input
-                type="number"
-                min="1"
-                max="10"
+                type="text"
+                inputMode="numeric"
                 className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                 value={form.mood_level}
                 onChange={(e) => setForm((prev) => ({ ...prev, mood_level: e.target.value }))}
@@ -192,9 +230,8 @@ export default function Journal() {
             <div>
               <label className="mb-1 block text-sm text-gray-600">Produktywność (1-10)</label>
               <input
-                type="number"
-                min="1"
-                max="10"
+                type="text"
+                inputMode="numeric"
                 className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                 value={form.productivity_level}
                 onChange={(e) => setForm((prev) => ({ ...prev, productivity_level: e.target.value }))}
@@ -204,7 +241,8 @@ export default function Journal() {
             <div>
               <label className="mb-1 block text-sm text-gray-600">Kofeina (mg)</label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                 value={form.caffeine_mg}
                 onChange={(e) => setForm((prev) => ({ ...prev, caffeine_mg: e.target.value }))}
@@ -214,10 +252,21 @@ export default function Journal() {
             <div>
               <label className="mb-1 block text-sm text-gray-600">Kalorie zjedzone</label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                 value={form.calories_eaten}
                 onChange={(e) => setForm((prev) => ({ ...prev, calories_eaten: e.target.value }))}
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-sm text-gray-600">Tagi</label>
+              <input
+                className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
+                value={form.tags_text}
+                onChange={(e) => setForm((prev) => ({ ...prev, tags_text: e.target.value }))}
+                placeholder="np. praca, nauka, zdrowie"
               />
             </div>
 
@@ -274,8 +323,8 @@ export default function Journal() {
                 />
 
                 <input
-                  type="number"
-                  step="0.1"
+                  type="text"
+                  inputMode="decimal"
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                   placeholder="Sen"
                   value={editForm.sleep_hours}
@@ -283,9 +332,8 @@ export default function Journal() {
                 />
 
                 <input
-                  type="number"
-                  min="1"
-                  max="10"
+                  type="text"
+                  inputMode="numeric"
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                   placeholder="Energia"
                   value={editForm.energy_level}
@@ -293,9 +341,8 @@ export default function Journal() {
                 />
 
                 <input
-                  type="number"
-                  min="1"
-                  max="10"
+                  type="text"
+                  inputMode="numeric"
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                   placeholder="Nastrój"
                   value={editForm.mood_level}
@@ -303,9 +350,8 @@ export default function Journal() {
                 />
 
                 <input
-                  type="number"
-                  min="1"
-                  max="10"
+                  type="text"
+                  inputMode="numeric"
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                   placeholder="Produktywność"
                   value={editForm.productivity_level}
@@ -313,7 +359,8 @@ export default function Journal() {
                 />
 
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                   placeholder="Kofeina"
                   value={editForm.caffeine_mg}
@@ -321,12 +368,23 @@ export default function Journal() {
                 />
 
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
                   placeholder="Kalorie"
                   value={editForm.calories_eaten}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, calories_eaten: e.target.value }))}
                 />
+
+                <div className="md:col-span-2">
+                  <label className="mb-1 block text-sm text-gray-600">Tagi</label>
+                  <input
+                    className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
+                    value={editForm.tags_text}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, tags_text: e.target.value }))}
+                    placeholder="np. praca, nauka, zdrowie"
+                  />
+                </div>
               </div>
 
               <textarea
@@ -378,11 +436,23 @@ export default function Journal() {
         {entries.map((entry) => (
           <div key={entry.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
+              <div className="min-w-0">
                 <h3 className="text-lg font-semibold text-gray-900">
                   {new Date(entry.log_date).toLocaleDateString("pl-PL")}
                 </h3>
-                <p className="mt-1 text-sm text-gray-600">
+
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(entry.tags || []).map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+
+                <p className="mt-3 text-sm text-gray-600">
                   Sen: {entry.sleep_hours ?? "-"} h | Energia: {entry.energy_level ?? "-"} | Nastrój: {entry.mood_level ?? "-"} | Produktywność: {entry.productivity_level ?? "-"}
                 </p>
                 <p className="mt-1 text-sm text-gray-600">
