@@ -1,0 +1,11 @@
+fastapi==0.135.1
+uvicorn==0.41.0
+SQLAlchemy==2.0.51
+psycopg2-binary==2.9.12
+pydantic==2.12.5
+pydantic-settings==2.14.2
+python-dotenv==1.2.2
+passlib==1.7.4
+python-jose==3.5.0
+cryptography==49.0.0
+alembic==1.18.5
