@@ -8,7 +8,7 @@ class Expense(Base):
     __tablename__ = "expenses"
 
     id = Column(Integer, primary_key=True, index=True)
-    transaction_type = Column(String(20), nullable=False)  # "income" albo "expense"
+    transaction_type = Column(String(20), nullable=False) 
     amount = Column(Numeric(12, 2), nullable=False)
     description = Column(String(255), nullable=True)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)

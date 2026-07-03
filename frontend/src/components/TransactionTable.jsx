@@ -1,4 +1,10 @@
 export default function TransactionTable({ transactions }) {
+  const formatType = (type) => {
+    if (type === "wplata" || type === "income") return "Wpłata";
+    if (type === "wydatek" || type === "expense") return "Wydatek";
+    return type;
+  };
+
   return (
     <div className="rounded-2xl bg-white p-5 shadow-sm border border-gray-200">
       <h3 className="text-lg font-semibold text-gray-900">Ostatnie transakcje</h3>
@@ -18,7 +24,7 @@ export default function TransactionTable({ transactions }) {
             {transactions.map((t) => (
               <tr key={t.id} className="border-b last:border-b-0 text-sm">
                 <td className="py-3">{t.id}</td>
-                <td>{t.transaction_type}</td>
+                <td>{formatType(t.transaction_type)}</td>
                 <td>{Number(t.amount).toFixed(2)} zł</td>
                 <td>{t.description || "-"}</td>
                 <td>{new Date(t.created_at).toLocaleString("pl-PL")}</td>

@@ -4,8 +4,10 @@ from app.core.database import Base, engine
 
 from app.models.category import Category
 from app.models.expense import Expense
+from app.models.reminder import Reminder
+from app.models.journal import JournalEntry
 
-from app.routers import expenses, dashboard
+from app.routers import expenses, dashboard, reminders, journal
 
 Base.metadata.create_all(bind=engine)
 
@@ -21,6 +23,8 @@ app.add_middleware(
 
 app.include_router(expenses.router)
 app.include_router(dashboard.router)
+app.include_router(reminders.router)
+app.include_router(journal.router)
 
 
 @app.get("/")

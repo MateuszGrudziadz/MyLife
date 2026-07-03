@@ -7,7 +7,13 @@ from app.models.category import Category
 from app.models.expense import Expense
 from app.schemas.category import CategoryCreate, CategoryOut
 from app.schemas.expense import ExpenseCreate, ExpenseOut, ExpenseUpdate
-from app.services.expense_service import get_balance, get_month_stats, validate_category_kind
+from app.services.expense_service import (
+    get_balance,
+    get_month_stats,
+    validate_category_kind,
+    normalize_type,
+    ALLOWED_TYPES,
+)
 
 router = APIRouter(prefix="/expenses", tags=["expenses"])
 
@@ -18,10 +24,9 @@ def create_category(payload: CategoryCreate, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Taka kategoria już istnieje")
 
-    if payload.kind not in ["income", "expense"]:
-        raise HTTPException(status_code=400, detail="kind musi mieć wartość 'income' albo 'expense'")
+    kind = normalize_type(payload.kind)
 
-    category = Category(name=payload.name, kind=payload.kind)
+    category = Category(name=payload.name, kind=kind)
     db.add(category)
     db.commit()
     db.refresh(category)
@@ -35,18 +40,16 @@ def list_categories(db: Session = Depends(get_db)):
 
 @router.post("/transactions", response_model=ExpenseOut, status_code=status.HTTP_201_CREATED)
 def create_transaction(payload: ExpenseCreate, db: Session = Depends(get_db)):
-    if payload.transaction_type not in ["income", "expense"]:
-        raise HTTPException(status_code=400, detail="transaction_type musi mieć wartość 'income' albo 'expense'")
+    transaction_type = normalize_type(payload.transaction_type)
 
-    category = None
     if payload.category_id is not None:
         category = db.query(Category).filter(Category.id == payload.category_id).first()
         if not category:
             raise HTTPException(status_code=404, detail="Nie znaleziono kategorii")
-        validate_category_kind(category, payload.transaction_type)
+        validate_category_kind(category, transaction_type)
 
     transaction = Expense(
-        transaction_type=payload.transaction_type,
+        transaction_type=transaction_type,
         amount=payload.amount,
         description=payload.description,
         category_id=payload.category_id,
@@ -77,9 +80,7 @@ def update_transaction(transaction_id: int, payload: ExpenseUpdate, db: Session 
         raise HTTPException(status_code=404, detail="Nie znaleziono transakcji")
 
     if payload.transaction_type is not None:
-        if payload.transaction_type not in ["income", "expense"]:
-            raise HTTPException(status_code=400, detail="transaction_type musi mieć wartość 'income' albo 'expense'")
-        transaction.transaction_type = payload.transaction_type
+        transaction.transaction_type = normalize_type(payload.transaction_type)
 
     if payload.amount is not None:
         transaction.amount = payload.amount

@@ -1,14 +1,21 @@
-import { LayoutDashboard, Wallet, Bell, NotebookPen, Target } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Wallet,
+  Bell,
+  NotebookPen,
+  Target,
+} from "lucide-react";
+
+const items = [
+  { label: "Dashboard", to: "/", icon: LayoutDashboard },
+  { label: "Wydatki", to: "/expenses", icon: Wallet },
+  { label: "Przypomnienia", to: "/reminders", icon: Bell },
+  { label: "Dziennik", to: "/journal", icon: NotebookPen },
+  { label: "Cele", to: "/goals", icon: Target },
+];
 
 export default function Sidebar() {
-  const items = [
-    { label: "Dashboard", icon: LayoutDashboard },
-    { label: "Wydatki", icon: Wallet },
-    { label: "Przypomnienia", icon: Bell },
-    { label: "Dziennik", icon: NotebookPen },
-    { label: "Cele", icon: Target },
-  ];
-
   return (
     <aside className="w-full border-b bg-white p-4 md:h-screen md:w-72 md:border-b-0 md:border-r">
       <div>
@@ -20,13 +27,21 @@ export default function Sidebar() {
         {items.map((item) => {
           const Icon = item.icon;
           return (
-            <button
+            <NavLink
               key={item.label}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-700 hover:bg-gray-100"
+              to={item.to}
+              className={({ isActive }) =>
+                [
+                  "flex items-center gap-3 rounded-xl px-4 py-3 text-left transition",
+                  isActive
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-700 hover:bg-gray-100",
+                ].join(" ")
+              }
             >
               <Icon size={18} />
               <span>{item.label}</span>
-            </button>
+            </NavLink>
           );
         })}
       </nav>

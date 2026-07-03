@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 class ExpenseCreate(BaseModel):
-    transaction_type: str  # "income" albo "expense"
+    transaction_type: str  # wplata / wydatek / income / expense
     amount: Decimal
     description: Optional[str] = None
     category_id: Optional[int] = None

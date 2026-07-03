@@ -4,7 +4,7 @@ from datetime import datetime
 
 class CategoryCreate(BaseModel):
     name: str
-    kind: str  # "income" albo "expense"
+    kind: str  # wplata / wydatek
 
 
 class CategoryOut(BaseModel):
