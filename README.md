@@ -87,7 +87,7 @@ pip install -r requirements.txt
 Create a `.env` file based on `.env.example` and configure your PostgreSQL connection:
 
 ```env
-DATABASE_URL=postgresql+psycopg2://postgres:YOUR_PASSWORD@localhost:5432/mylife
+DATABASE_URL=postgresql+psycopg2://postgres:YOUR_PASSWORD@localhost:5432/mylife_auth
 SECRET_KEY=YOUR_SECRET_KEY
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
